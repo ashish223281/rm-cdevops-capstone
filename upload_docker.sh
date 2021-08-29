@@ -10,7 +10,7 @@ dockerpath=fmmrm/rm-capstone
 # Step 2:
 # Authenticate & tag
 docker login --username fmmrm
-docker tag rm-api $dockerpath
+docker tag rm-capstone $dockerpath
 echo "Docker ID and Image: $dockerpath"
 
 # Step 3:

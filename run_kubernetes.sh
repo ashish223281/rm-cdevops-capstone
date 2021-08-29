@@ -9,7 +9,7 @@ echo 'Step1 done'
 
 # Step 2
 # Run the Docker Hub container with kubernetes
-kubectl run rm-api\
+kubectl run rm-capstone\
     --generator=run-pod/v1\
     --image=$dockerpath\
     --port=80 --labels app=rm-capstone
