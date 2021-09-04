@@ -1,10 +1,3 @@
-version: 2.1
-
-orbs:
-  aws-eks: circleci/aws-eks@1.0.3
-  kubernetes: circleci/kubernetes@0.11.2
-
-
 executors:
   python:
     docker:
@@ -26,13 +19,11 @@ jobs:
             make install
             sudo wget -O /bin/hadolint https://github.com/hadolint/hadolint/releases/download/v1.16.3/hadolint-Linux-x86_64 &&\
             sudo chmod +x /bin/hadolint
-
       - run:
           name: run lint
           command: |
             . venv/bin/activate
             make lint
-
   build:
     machine: true
     working_directory: ~/project
@@ -48,57 +39,118 @@ jobs:
             docker tag fmmrm/rm-capstone-${CIRCLE_WORKFLOW_ID} fmmrm/rm-capstone:latest
             docker push fmmrm/rm-capstone:latest
 
+  create-cluster:
+     executor: aws-eks/python3
+     parameters:
+       cluster-name:
+         description: |
+           rm-capstone
+         type: string
+     steps:
+       - checkout
+       - aws-eks/install-aws-iam-authenticator:
+           release-tag: ''
+       - run:
+           name: Install the eksctl tool
+           command: |
+             if which eksctl > /dev/null; then
+             echo "eksctl is already installed"
+             exit 0
+             fi
+             mkdir -p eksctl_download
+             curl --silent --location --retry 5 "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C eksctl_download
+             chmod +x eksctl_download/eksctl
+             SUDO=""
+             if [ $(id -u) -ne 0 ] && which sudo > /dev/null ; then
+             SUDO="sudo"
+             fi
+             $SUDO mv eksctl_download/eksctl /usr/local/bin/
+             rmdir eksctl_download
+       - aws-eks/create-cluster:
+           cluster-name: << parameters.cluster-name >>
+           skip-kubectl-install: false
+           verbose: 3
+           node-type: t2.micro
+           nodes-max: 2
+           ssh-access: false
+           ssh-public-key: ''
+
   create-deployment:
     executor: aws-eks/python3
     parameters:
       cluster-name:
         description: |
-         rm-capstone project
+          rm-capstone
         type: string
     steps:
       - checkout
+      - kubernetes/install
       - aws-eks/update-kubeconfig-with-authenticator:
           cluster-name: << parameters.cluster-name >>
           install-kubectl: true
       - kubernetes/create-or-update-resource:
           get-rollout-status: true
-          resource-file-path: deployment.yaml
+          resource-file-path: deployment.yml
           resource-name: deployment/rm-capstone
+
+  test-cluster:
+    executor: aws-eks/python3
+    parameters:
+      cluster-name:
+        description: |
+          rm-capstone
+        type: string
+    steps:
+      - kubernetes/install
       - run:
-          name: check cluster
+           name: Install the eksctl tool
+           command: |
+             if which eksctl > /dev/null; then
+             echo "eksctl is already installed"
+             exit 0
+             fi
+             mkdir -p eksctl_download
+             curl --silent --location --retry 5 "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C eksctl_download
+             chmod +x eksctl_download/eksctl
+             SUDO=""
+             if [ $(id -u) -ne 0 ] && which sudo > /dev/null ; then
+             SUDO="sudo"
+             fi
+             $SUDO mv eksctl_download/eksctl /usr/local/bin/
+             rmdir eksctl_download
+      - aws-eks/update-kubeconfig-with-authenticator:
+          cluster-name: << parameters.cluster-name >>
+      - run:
+          name: Test cluster
           command: |
+            kubectl get services
             kubectl get svc
             kubectl get nodes -o wide
             kubectl get pods
-            kubectl get deployment
 
+orbs:
+  aws-eks: circleci/aws-eks@1.1.0
+  kubernetes: circleci/kubernetes@0.4.0
+version: 2.1
 
 workflows:
-  default:
+  deployment:
     jobs:
       - lint
       - build:
           requires:
             - lint
-      - aws-eks/create-cluster:
+      - create-cluster:
           cluster-name: rm-capstone
       - create-deployment:
           cluster-name: rm-capstone
           requires:
-            - aws-eks/create-cluster
-      - aws-eks/update-container-image:
+            - create-cluster
+      - test-cluster:
           cluster-name: rm-capstone
-          container-image-updates: 'nginx=nginx:1.21.1'
-          post-steps:
-            - kubernetes/delete-resource:
-                resource-names: deployment/rm-capstone
-                resource-types: deployment
-                wait: true
-          record: true
           requires:
-            - create-deployment
-          resource-name: deployment/rm-capstone
+            - create-cluster
       - aws-eks/delete-cluster:
           cluster-name: rm-capstone
           requires:
-            - aws-eks/update-container-image
+            - test-cluster
