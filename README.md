@@ -1,5 +1,7 @@
 Udacity Capstone
 
+[![CircleCI](https://circleci.com/gh/fmmricardo/rm-cdevops-capstone/tree/main.svg?style=svg)](https://circleci.com/gh/fmmricardo/rm-cdevops-capstone/tree/main)
+
 ## Project Overview
 
 This is the Capstone project in Udacity Cloud Devops Enginner nanodegree. The
@@ -39,10 +41,10 @@ Setup the Environment
 
 ### Links & Resources
 
-https://circleci.com/developer/orbs/orb/circleci/aws-eks#usage-create-eks-cluster
-https://andresaaap.medium.com/how-to-create-an-aws-eks-cluster-using-circleci-aws-eks-orb-d09a4012fd1d
-https://docs.aws.amazon.com/eks/latest/userguide/getting-started-console.html
-https://circleci.com/developer/orbs/orb/circleci/kubernetes
-https://circleci.com/developer/orbs/orb/circleci/aws-eks
-https://github.com/andresaaap/cicd-create-delete-cluster-circleci
-https://github.com/CircleCI-Public/aws-eks-orb/issues/42#issuecomment-912989808
+- https://circleci.com/developer/orbs/orb/circleci/aws-eks#usage-create-eks-cluster
+- https://andresaaap.medium.com/how-to-create-an-aws-eks-cluster-using-circleci-aws-eks-orb-d09a4012fd1d
+- https://docs.aws.amazon.com/eks/latest/userguide/getting-started-console.html
+- https://circleci.com/developer/orbs/orb/circleci/kubernetes
+- https://circleci.com/developer/orbs/orb/circleci/aws-eks
+- https://github.com/andresaaap/cicd-create-delete-cluster-circleci
+- https://github.com/CircleCI-Public/aws-eks-orb/issues/42#issuecomment-912989808

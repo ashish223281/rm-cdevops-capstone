@@ -44,7 +44,7 @@ jobs:
      parameters:
        cluster-name:
          description: |
-           rm-capstone-project
+           rm-capstone
          type: string
      steps:
        - checkout
@@ -80,45 +80,50 @@ jobs:
     parameters:
       cluster-name:
         description: |
-          rm-capstone-project
+          rm-capstone
         type: string
     steps:
       - checkout
-      - kubernetes/install
       - aws-eks/update-kubeconfig-with-authenticator:
           cluster-name: << parameters.cluster-name >>
           install-kubectl: true
       - kubernetes/create-or-update-resource:
-          get-rollout-status: true
+          get-rollout-status: false
           resource-file-path: deployment.yml
-          resource-name: deployment/rm-capstone-project
+          resource-name: deployment/rm-capstone
 
   test-cluster:
     executor: aws-eks/python3
     parameters:
       cluster-name:
         description: |
-          rm-capstone-project
+          rm-capstone
         type: string
     steps:
-      - checkout
       - run:
-           name: Install the eksctl tool
-           command: |
-             if which eksctl > /dev/null; then
-             echo "eksctl is already installed"
-             exit 0
-             fi
-             mkdir -p eksctl_download
-             curl --silent --location --retry 5 "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C eksctl_download
-             chmod +x eksctl_download/eksctl
-             SUDO=""
-             if [ $(id -u) -ne 0 ] && which sudo > /dev/null ; then
-             SUDO="sudo"
-             fi
-             $SUDO mv eksctl_download/eksctl /usr/local/bin/
-             rmdir eksctl_download
-      - kubernetes/install
+          name: Install the eksctl tool
+          command: |
+            if which eksctl > /dev/null; then
+            echo "eksctl is already installed"
+            exit 0
+            fi
+            mkdir -p eksctl_download
+            curl --silent --location --retry 5 "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C eksctl_download
+            chmod +x eksctl_download/eksctl
+            SUDO=""
+            if [ $(id -u) -ne 0 ] && which sudo > /dev/null ; then
+            SUDO="sudo"
+            fi
+            $SUDO mv eksctl_download/eksctl /usr/local/bin/
+            rmdir eksctl_download
+      - run:
+          name: Install of dependencies for cluster and workers setup - kubectl
+          command: |
+            curl -o kubectl https://amazon-eks.s3.us-west-2.amazonaws.com/1.20.4/2021-04-12/bin/linux/amd64/kubectl
+            chmod +x ./kubectl
+            mkdir -p $HOME/bin && cp ./kubectl $HOME/bin/kubectl && export PATH=$PATH:$HOME/bin
+            echo 'export PATH=$PATH:$HOME/bin' >> ~/.bashrc
+            kubectl version --short --client
       - aws-eks/update-kubeconfig-with-authenticator:
           cluster-name: << parameters.cluster-name >>
       - run:
@@ -126,8 +131,43 @@ jobs:
           command: |
             kubectl get services
             kubectl get nodes -o wide
-            kubectl get pods
+  delete-cluster:
+    executor: aws-eks/python3
+    parameters:
+      cluster-name:
+        description: |
+          rm-capstone
+        type: string
+    steps:
+      - checkout
+      - aws-eks/install-aws-iam-authenticator:
+          release-tag: ''
+      - run:
+          name: Install the eksctl tool
+          command: |
+            if which eksctl > /dev/null; then
+            echo "eksctl is already installed"
+            exit 0
+            fi
+            mkdir -p eksctl_download
+            curl --silent --location --retry 5 "https://github.com/weaveworks/eksctl/releases/latest/download/eksctl_$(uname -s)_amd64.tar.gz" | tar xz -C eksctl_download
+            chmod +x eksctl_download/eksctl
+            SUDO=""
+            if [ $(id -u) -ne 0 ] && which sudo > /dev/null ; then
+            SUDO="sudo"
+            fi
+            $SUDO mv eksctl_download/eksctl /usr/local/bin/
+            rmdir eksctl_download
+      - aws-eks/delete-cluster:
+         cluster-name: rm-capstone
 
+  delay:
+    executor: aws-eks/python3
+    steps:
+      - run:
+          command: |
+            sleep 540
+          name: Delay cluster deletion
 orbs:
   aws-eks: circleci/aws-eks@1.1.0
   kubernetes: circleci/kubernetes@0.4.0
@@ -141,16 +181,19 @@ workflows:
           requires:
             - lint
       - create-cluster:
-          cluster-name: rm-capstone-project
+          cluster-name: rm-capstone
       - create-deployment:
-          cluster-name: rm-capstone-project
+          cluster-name: rm-capstone
           requires:
             - create-cluster
       - test-cluster:
-          cluster-name: rm-capstone-project
+          cluster-name: rm-capstone
           requires:
             - create-cluster
-      - aws-eks/delete-cluster:
-          cluster-name: rm-capstone-project
+      - delay:
           requires:
-            - test-cluster
+            - create-cluster
+      - delete-cluster:
+          cluster-name: rm-capstone
+          requires:
+            - delay
