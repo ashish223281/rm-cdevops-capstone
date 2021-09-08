@@ -124,7 +124,6 @@ jobs:
           name: Test cluster
           command: |
             kubectl get services
-            kubectl get svc
             kubectl get nodes -o wide
             kubectl get pods
 
