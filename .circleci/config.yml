@@ -44,7 +44,7 @@ jobs:
      parameters:
        cluster-name:
          description: |
-           rm-capstone
+           rm-capstone-project
          type: string
      steps:
        - checkout
@@ -80,7 +80,7 @@ jobs:
     parameters:
       cluster-name:
         description: |
-          rm-capstone
+          rm-capstone-project
         type: string
     steps:
       - checkout
@@ -91,17 +91,16 @@ jobs:
       - kubernetes/create-or-update-resource:
           get-rollout-status: true
           resource-file-path: deployment.yml
-          resource-name: deployment/rm-capstone
+          resource-name: deployment/rm-capstone-project
 
   test-cluster:
     executor: aws-eks/python3
     parameters:
       cluster-name:
         description: |
-          rm-capstone
+          rm-capstone-project
         type: string
     steps:
-      - kubernetes/install
       - run:
            name: Install the eksctl tool
            command: |
@@ -140,16 +139,16 @@ workflows:
           requires:
             - lint
       - create-cluster:
-          cluster-name: rm-capstone
+          cluster-name: rm-capstone-project
       - create-deployment:
-          cluster-name: rm-capstone
+          cluster-name: rm-capstone-project
           requires:
             - create-cluster
       - test-cluster:
-          cluster-name: rm-capstone
+          cluster-name: rm-capstone-project
           requires:
             - create-cluster
       - aws-eks/delete-cluster:
-          cluster-name: rm-capstone
+          cluster-name: rm-capstone-project
           requires:
             - test-cluster

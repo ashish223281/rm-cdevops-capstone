@@ -1,14 +1,14 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: rm-capstone
+  name: rm-capstone-project
   labels:
-    app: rm-capstone
+    app: rm-capstone-project
 spec:
   replicas: 3
   selector:
     matchLabels:
-      app: rm-capstone
+      app: rm-capstone-project
   strategy:
     rollingUpdate:
       maxSurge: 25%
@@ -17,25 +17,25 @@ spec:
   template:
     metadata:
       labels:
-        app: rm-capstone
+        app: rm-capstone-project
     spec:
       containers:
-      - name: rm-capstone
+      - name: rm-capstone-project
         imagePullPolicy: Always
-        image: fmmrm/rm-capstone
+        image: fmmrm/rm-capstone-project
         ports:
         - containerPort: 80
 ---
 apiVersion: v1
 kind: Service
 metadata:
-  name: rm-capstone
+  name: rm-capstone-project
   labels:
-    app: rm-capstone
+    app: rm-capstone-project
 spec:
   type: LoadBalancer
   selector:
-    app: rm-capstone
+    app: rm-capstone-project
   ports:
     - port: 80
       targetPort: 80
