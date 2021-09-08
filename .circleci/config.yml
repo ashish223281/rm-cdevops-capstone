@@ -101,6 +101,8 @@ jobs:
           rm-capstone-project
         type: string
     steps:
+      - checkout
+      - kubernetes/install
       - run:
            name: Install the eksctl tool
            command: |
