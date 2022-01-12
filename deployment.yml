@@ -22,7 +22,7 @@ spec:
       containers:
       - name: rm-capstone-projects
         imagePullPolicy: Always
-        image: fmmrm/rm-capstone
+        image: ashish223281/rm-capstone
         ports:
         - containerPort: 80
 ---
