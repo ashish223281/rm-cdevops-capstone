@@ -34,10 +34,10 @@ jobs:
           name: build and push tag
           command: |
             docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD}
-            docker build -t fmmrm/rm-capstone-${CIRCLE_WORKFLOW_ID} .
-            docker push fmmrm/rm-capstone-${CIRCLE_WORKFLOW_ID}
-            docker tag fmmrm/rm-capstone-${CIRCLE_WORKFLOW_ID} fmmrm/rm-capstone:latest
-            docker push fmmrm/rm-capstone:latest
+            docker build -t ashish223281/rm-capstone-${CIRCLE_WORKFLOW_ID} .
+            docker push ashish223281/rm-capstone-${CIRCLE_WORKFLOW_ID}
+            docker tag ashish223281/rm-capstone-${CIRCLE_WORKFLOW_ID} ashish223281/rm-capstone:latest
+            docker push ashish223281/rm-capstone:latest
 
   create-cluster:
      executor: aws-eks/python3
